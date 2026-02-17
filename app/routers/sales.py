@@ -132,3 +132,32 @@ def get_sale(
         "custo": custo,
         "lucro": lucro
     }
+    
+    
+@router.delete("/{sale_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_sale(
+    sale_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    sale = db.query(Sale).filter(
+        Sale.id == sale_id,
+        Sale.user_id == current_user.id
+    ).first()
+    
+    if not sale:
+        raise HTTPException(
+            status_code=404, 
+            detail="Venda não encontrada"
+        )
+    
+    tire = db.query(Tire).filter(Tire.id == sale.tire_id).first()
+    
+    if tire:
+        tire.vendido = False
+        tire.data_saida = None
+    
+    db.delete(sale)
+    db.commit()
+    
+    return None
